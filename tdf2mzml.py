@@ -1254,20 +1254,20 @@ def main():
 
     args = parser.parse_args()
 
-    def d_folder_gen(path: str) -> Iterator[str]:
+    def d_folder_gen(path: str) -> List[str]:
         path = Path(path)
         if not path.is_dir():
-            return None
+            return []
 
         if str(path).endswith('.d'):
-            yield str(path)
+            return [str(path)]
         else:
-            pathlist = path.rglob('*.d')
-            for p in pathlist:
-                yield str(p)
+            return [str(p) for p in path.rglob('*.d')]
 
     for d_folder in d_folder_gen(args.input):
         args.input = d_folder
+
+        old_output = args.output
         if args.output is None:
             args.output = os.path.normpath(re.sub('d[/]?$', 'mzml', d_folder))
 
@@ -1275,8 +1275,9 @@ def main():
             logging.basicConfig(level=logging.DEBUG)
         else:
             logging.basicConfig(level=logging.INFO)
-        print(args)
+
         write_mzml(args)
+        args.output = old_output
 
 
 if __name__ == "__main__":
