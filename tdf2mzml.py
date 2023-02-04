@@ -16,6 +16,9 @@ import collections
 import hashlib
 import logging
 import math
+from pathlib import Path
+from typing import List, Iterator
+
 import numpy as np
 import os
 from psims.mzml import MzMLWriter
@@ -23,7 +26,7 @@ import re
 import sqlite3, sys, time
 import sys
 import time
-import timsdata as timsdata
+from tdfpy import timsdata
 
 NAME = 'tdf2mzml'
 MAJOR_VERSION = '0.3'
@@ -1251,15 +1254,29 @@ def main():
 
     args = parser.parse_args()
 
-    if args.output == None:
-        args.output = os.path.normpath(re.sub('d[/]?$', 'mzml', args.input))
+    def d_folder_gen(path: str) -> Iterator[str]:
+        path = Path(path)
+        if not path.is_dir():
+            return None
 
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG)
-    else:
-        logging.basicConfig(level=logging.INFO)
+        if str(path).endswith('.d'):
+            yield str(path)
+        else:
+            pathlist = path.rglob('*.d')
+            for p in pathlist:
+                yield str(p)
 
-    write_mzml(args)
+    for d_folder in d_folder_gen(args.input):
+        args.input = d_folder
+        if args.output is None:
+            args.output = os.path.normpath(re.sub('d[/]?$', 'mzml', d_folder))
+
+        if args.debug:
+            logging.basicConfig(level=logging.DEBUG)
+        else:
+            logging.basicConfig(level=logging.INFO)
+        print(args)
+        write_mzml(args)
 
 
 if __name__ == "__main__":
